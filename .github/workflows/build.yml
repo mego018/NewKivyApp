@@ -1,37 +1,26 @@
-name: Build Kivy Android APK
+name: Build APK (with Docker)
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      # 1️⃣ اسحب الكود
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
+      # 2️⃣ شغل Buildozer داخل Docker (جاهز بكل شيء)
+      - name: Build Debug APK
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/app -w /app kivy/buildozer:latest \
+          buildozer -v android debug
 
-      - name: Install Android SDK
-        uses: r0adkll/setup-android-sdk@v2
-        with:
-          sdk-tools: '33.0.2'
-          build-tools: '33.0.2'
-          licenses: true
-
-      - name: Install Buildozer
-        run: pip install buildozer
-
-      - name: Configure and Build APK
-        run: buildozer android debug
-
-      - name: Upload APK as Artifact
+      # 3️⃣ ارفع ملف APK النهائي
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: kivy-app-apk
+          name: MagmaApp-debug
           path: bin/*.apk
