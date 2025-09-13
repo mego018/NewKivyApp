@@ -1,63 +1,30 @@
-name: Build APK (Debug + Release)
+name: Build Kivy Android APK
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      # 1️⃣ Checkout repo
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-      # 2️⃣ Setup Python
-      - uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.12
+          python-version: '3.9'
 
-      # 3️⃣ Install system dependencies
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk python3-venv
+      - name: Install Buildozer
+        run: pip install buildozer
 
-      # 4️⃣ Create virtual environment and install Buildozer
-      - name: Setup Python virtualenv
-        run: |
-          python3 -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip
-          pip install cython
-          pip install git+https://github.com/kivy/buildozer.git@master
+      - name: Configure and Build APK
+        run: buildozer android debug
 
-      # 5️⃣ Force stable Build-Tools version
-      - name: Set stable Build-Tools version
-        run: |
-          sed -i 's/android.build_tools_version = .*/android.build_tools_version = 36.0.0/' buildozer.spec
-
-      # 6️⃣ Accept Android SDK licenses
-      - name: Accept Android SDK licenses
-        run: |
-          source venv/bin/activate
-          yes | $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses || true
-
-      # 7️⃣ Build debug APK with full logs
-      - name: Build Debug APK
-        run: |
-          source venv/bin/activate
-          buildozer -v android debug
-
-      # 8️⃣ Build release APK with full logs
-      - name: Build Release APK
-        run: |
-          source venv/bin/activate
-          buildozer -v android release
-
-      # 9️⃣ Upload APKs as artifacts
-      - name: Upload APKs
-        uses: actions/upload-artifact@v4
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: MagmaApp-APKs
+          name: kivy-app-apk
           path: bin/*.apk
