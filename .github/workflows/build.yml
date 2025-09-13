@@ -20,6 +20,11 @@ jobs:
       - name: Install Buildozer
         run: pip install buildozer
 
+      - name: Install Android SDK components
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "build-tools;33.0.2" "cmdline-tools;latest"
+
       - name: Configure and Build APK
         run: buildozer android debug
 
