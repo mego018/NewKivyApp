@@ -9,41 +9,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout the repo
+      # 1️⃣ Checkout repo
       - uses: actions/checkout@v4
 
-      # 2️⃣ Get current date for cache keys
-      - name: Get Date
-        id: get-date
-        run: echo "date=$(date -u +'%Y%m%d')" >> $GITHUB_OUTPUT
-
-      # 3️⃣ Cache Buildozer global directory
-      - name: Cache Buildozer global directory
-        uses: actions/cache@v4
+      # 2️⃣ Setup Python 3
+      - uses: actions/setup-python@v4
         with:
-          path: .buildozer_global
-          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
+          python-version: 3.12
 
-      # 4️⃣ Cache Buildozer project directory
-      - name: Cache Buildozer directory
-        uses: actions/cache@v4
-        with:
-          path: .buildozer
-          key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('buildozer.spec') }}
+      # 3️⃣ Install system dependencies
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git zip unzip openjdk-17-jdk python3-venv
 
-      # 5️⃣ Build APK with Buildozer
-      - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@master
-        env:
-          USER: root
-        id: buildozer
-        with:
-          command: buildozer android debug
-          buildozer_version: master
+      # 4️⃣ Create virtual environment and install Buildozer
+      - name: Setup Python virtualenv
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install cython
+          pip install git+https://github.com/kivy/buildozer.git@master
 
-      # 6️⃣ Upload APK artifact
-      - name: Upload artifacts
+      # 5️⃣ Build APK
+      - name: Build APK
+        run: |
+          source venv/bin/activate
+          buildozer android debug
+
+      # 6️⃣ Upload APK as artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: package
-          path: ${{ steps.buildozer.outputs.filename }}
+          name: MagmaApp-APK
+          path: bin/*.apk
